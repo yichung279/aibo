@@ -2,17 +2,18 @@
 
 
 # standard import
+from datetime import datetime
 import json
 
 # third-party import
+import requests
 import uvicorn
 from fastapi import FastAPI, Request
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError, LineBotApiError
 from linebot.models import MessageEvent, TextMessage, TextSendMessage
-from model.Model import ShareLog, User
 from pydantic import BaseModel
-from sqlalchemy import create_engine
+from sqlalchemy import MetaData, create_engine
 from sqlalchemy.orm import sessionmaker
 
 # local import
@@ -27,32 +28,26 @@ handler = WebhookHandler(config.secret) # Channel Secret
 eliza = eliza.Eliza()
 eliza.load('doctor.txt')
 
-class event_item(BaseModel):
+class Event_item(BaseModel):
     events: list
     destination: str
-
-class share_item(BaseModel):
-    poster: str
-    url: str
-
 
 @app.get("/")
 async def root():
     return {"message": "Hello World"}
 
-@app.get("/share")
-async def share(item: share_item):
-    poster = item.poster
-    url = item.url
-    share_time = datetime.now().strftime('%Y%m%d_%H:%M:%S')
+@app.get("/share/")
+async def share(poster: str, url: str):
+    share_time = datetime.now()
     html_name = share_time.strftime('%Y%m%d_%H:%M:%S') + 'html'
 
     with open(f'./html/{html_name}', 'w')as f:
         f.write(requests.get(url).text)
 
     engine = create_engine(config.db_url)
-    Session = sessionmaker(bind=engine)()
-    Session.execute(ShareLog.insert(prefixes=['OR IGNORE']),
+    Session = sessionmaker()()
+    ShareLog_table = MetaData(bind=engine, reflect=True).tables['share_log']
+    Session.execute(ShareLog_table.insert(prefixes=['OR IGNORE']),
                     {"poster": poster, "url": url, "html_name": html_name, "share_time": share_time})
     Session.commit()
     Session.close()
@@ -60,11 +55,10 @@ async def share(item: share_item):
     return {"message": "Shared"}
 
 @app.post('/callback/')
-async def callback(item: event_item, request: Request):
+async def callback(item: Event_item, request: Request):
     signature = request.headers['X-Line-Signature'] # get X-Line-Signature header value
     # keep string format as returned string of flask.requset.get_data()
     body = json.dumps(dict(item), ensure_ascii=False, separators=(',', ':'))
-    # app.logger.info("Request body: " + body) # handle webhook body
     try:
         handler.handle(body, signature)
     except InvalidSignatureError as e:
@@ -82,7 +76,7 @@ def handle_message(event):
         said = event.message.text
         response = eliza.respond(said)
         if response is None:
-            response = 'りしれ供さ小?'
+            response = '開發中'
         line_bot_api.reply_message(
             event.reply_token,
             TextSendMessage(text=response)
@@ -97,8 +91,9 @@ def handle_message(event):
 
     # sqlalchemy orm
     engine = create_engine(config.db_url)
-    Session = sessionmaker(bind=engine)()
-    Session.execute(User.insert(prefixes=['OR IGNORE']), {"user_id": user_id})
+    Session = sessionmaker()()
+    UserTable = MetaData(bind=engine, reflect=True).tables['user']
+    Session.execute(UserTable.insert(prefixes=['OR IGNORE']), {"user_id": user_id})
     Session.commit()
     Session.close()
     print('user saved')

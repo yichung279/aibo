@@ -39,7 +39,7 @@ synon: everyone everybody nobody noone
 synon: be am is are was
 key: xnone
   decomp: *
-    reasmb: りしれ供さ小？
+    reasmb: 開發中
 key: sorry
   decomp: *
     reasmb: Please don't apologise.
