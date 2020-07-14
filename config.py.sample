@@ -1,9 +1,17 @@
 #!/usr/bin/env python3
 
+
+# db config
+db_url=[your db url] # e.g. sqlite:///aibo.db
+
+# server config
 host=[your host]
 port=[your port]
+
+# ssl config
 key=[your ssl key]
 cert=[your cert path]
-secret=[your secret code]
+
+# line bot config
 access_token=[your access token]
-db_url=[your db url]
+secret=[your secret code]
