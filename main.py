@@ -17,10 +17,15 @@ from sqlalchemy.orm import sessionmaker
 
 # local import
 import config
+from eliza import eliza
+
 
 app = FastAPI()
 line_bot_api = LineBotApi(config.access_token) # Channel Access Token
 handler = WebhookHandler(config.secret) # Channel Secret
+
+eliza = eliza.Eliza()
+eliza.load('doctor.txt')
 
 class event_item(BaseModel):
     events: list
@@ -29,6 +34,7 @@ class event_item(BaseModel):
 class share_item(BaseModel):
     poster: str
     url: str
+
 
 @app.get("/")
 async def root():
@@ -53,7 +59,7 @@ async def share(item: share_item):
 
     return {"message": "Shared"}
 
-@app.post('/callback')
+@app.post('/callback/')
 async def callback(item: event_item, request: Request):
     signature = request.headers['X-Line-Signature'] # get X-Line-Signature header value
     # keep string format as returned string of flask.requset.get_data()
@@ -70,8 +76,18 @@ def handle_message(event):
     if event.message.text == '機器人你好':
         line_bot_api.reply_message(
             event.reply_token,
-            TextSendMessage(text='Hi I\'m SinoPac AI bot')
+            TextSendMessage(text=eliza.initial())
         )
+    else:
+        said = event.message.text
+        response = eliza.respond(said)
+        if response is None:
+            response = 'りしれ供さ小?'
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text=response)
+        )
+
     if 'group' == event.source.type:
         user_id = event.source.group_id
     elif 'room' == event.source.type:
