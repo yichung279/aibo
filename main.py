@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 
 
+#
+import json
+
 # third-party imports
 import uvicorn
 from fastapi import FastAPI, Request
@@ -17,17 +20,18 @@ line_bot_api = LineBotApi(config.access_token) # Channel Access Token
 handler = WebhookHandler(config.secret) # Channel Secret
 
 class Item(BaseModel):
-    destination: str
     events: list
+    destination: str
 
 @app.get("/")
 async def root():
     return {"message": "Hello World"}
 
-@app.post('/callback')
+@app.post('/callback/')
 async def callback(item: Item, request: Request):
     signature = request.headers['X-Line-Signature'] # get X-Line-Signature header value
-    body = str(item) # get request body as text
+    # keep string format as returned string of flask.requset.get_data()
+    body = json.dumps(dict(item), ensure_ascii=False, separators=(',', ':'))
     # app.logger.info("Request body: " + body) # handle webhook body
     try:
         handler.handle(body, signature)
