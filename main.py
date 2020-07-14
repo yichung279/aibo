@@ -1,34 +1,60 @@
 #!/usr/bin/env python3
 
 
-#
+# standard import
 import json
 
-# third-party imports
+# third-party import
 import uvicorn
 from fastapi import FastAPI, Request
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError, LineBotApiError
 from linebot.models import MessageEvent, TextMessage, TextSendMessage
+from model.Model import ShareLog, User
 from pydantic import BaseModel
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
-# local imports
+# local import
 import config
 
 app = FastAPI()
 line_bot_api = LineBotApi(config.access_token) # Channel Access Token
 handler = WebhookHandler(config.secret) # Channel Secret
 
-class Item(BaseModel):
+class event_item(BaseModel):
     events: list
     destination: str
+
+class share_item(BaseModel):
+    poster: str
+    url: str
 
 @app.get("/")
 async def root():
     return {"message": "Hello World"}
 
-@app.post('/callback/')
-async def callback(item: Item, request: Request):
+@app.get("/share")
+async def share(item: share_item):
+    poster = item.poster
+    url = item.url
+    share_time = datetime.now().strftime('%Y%m%d_%H:%M:%S')
+    html_name = share_time.strftime('%Y%m%d_%H:%M:%S') + 'html'
+
+    with open(f'./html/{html_name}', 'w')as f:
+        f.write(requests.get(url).text)
+
+    engine = create_engine(config.db_url)
+    Session = sessionmaker(bind=engine)()
+    Session.execute(ShareLog.insert(prefixes=['OR IGNORE']),
+                    {"poster": poster, "url": url, "html_name": html_name, "share_time": share_time})
+    Session.commit()
+    Session.close()
+
+    return {"message": "Shared"}
+
+@app.post('/callback')
+async def callback(item: event_item, request: Request):
     signature = request.headers['X-Line-Signature'] # get X-Line-Signature header value
     # keep string format as returned string of flask.requset.get_data()
     body = json.dumps(dict(item), ensure_ascii=False, separators=(',', ':'))
@@ -53,10 +79,12 @@ def handle_message(event):
     else:
         user_id = event.source.user_id
 
-    conn = sqlite3.connect('crawler.db')
-    c = conn.cursor()
-    c.execute("INSERT OR IGNORE INTO user (userid) VALUES(\'%s\')" %user_id)
-    conn.commit()
+    # sqlalchemy orm
+    engine = create_engine(config.db_url)
+    Session = sessionmaker(bind=engine)()
+    Session.execute(User.insert(prefixes=['OR IGNORE']), {"user_id": user_id})
+    Session.commit()
+    Session.close()
     print('user saved')
 
 
