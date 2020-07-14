@@ -2,8 +2,9 @@
 
 
 # standard import
-from datetime import datetime
 import json
+import os
+from datetime import datetime
 
 # third-party import
 import requests
@@ -41,13 +42,18 @@ async def share(poster: str, url: str):
     share_time = datetime.now()
     html_name = share_time.strftime('%Y%m%d_%H:%M:%S') + 'html'
 
+    if not os.path.exists('html'):
+            os.makedirs('html')
+
     with open(f'./html/{html_name}', 'w')as f:
         f.write(requests.get(url).text)
 
     engine = create_engine(config.db_url)
     Session = sessionmaker()()
-    ShareLog_table = MetaData(bind=engine, reflect=True).tables['share_log']
-    Session.execute(ShareLog_table.insert(prefixes=['OR IGNORE']),
+
+    ShareLog.metadata.create_all(engine)
+    share_log_table = MetaData(bind=engine, reflect=True).tables['share_log']
+    Session.execute(share_log_table.insert(prefixes=['OR IGNORE']),
                     {"poster": poster, "url": url, "html_name": html_name, "share_time": share_time})
     Session.commit()
     Session.close()
@@ -92,10 +98,14 @@ def handle_message(event):
     # sqlalchemy orm
     engine = create_engine(config.db_url)
     Session = sessionmaker()()
-    UserTable = MetaData(bind=engine, reflect=True).tables['user']
-    Session.execute(UserTable.insert(prefixes=['OR IGNORE']), {"user_id": user_id})
+
+    User.metadata.create_all(engine)
+    user_table = MetaData(bind=engine, reflect=True).tables['user']
+
+    Session.execute(user_table.insert(prefixes=['OR IGNORE']), {"user_id": user_id})
     Session.commit()
     Session.close()
+
     print('user saved')
 
 
