@@ -1,0 +1,6 @@
+#!/usr/bin/env python3
+
+host='merry.ee.ncku.edu.tw'
+port=1094
+key='./ssl/private.key'
+cert='./ssl/server.crt'
