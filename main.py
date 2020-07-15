@@ -14,10 +14,11 @@ from fastapi import FastAPI, Request
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError, LineBotApiError
 from linebot.models import MessageEvent, TextMessage, TextSendMessage
-from model.Model import User, ShareLog
+from model.Model import User, CollectLog
 from pydantic import BaseModel
 from sqlalchemy import MetaData, Table, create_engine
 from sqlalchemy.orm import sessionmaker
+from typing import List
 
 # local import
 import config
@@ -28,6 +29,7 @@ app = FastAPI()
 line_bot_api = LineBotApi(config.access_token) # Channel Access Token
 handler = WebhookHandler(config.secret) # Channel Secret
 
+engine = create_engine(config.db_url)
 eliza = eliza.Eliza()
 eliza.load('doctor.txt')
 
@@ -39,32 +41,44 @@ class WebhookEventObject(BaseModel):
 async def root():
     return {"message": "Hello World"}
 
-@app.get("/post/")
-async def post(urls: list):
-    return true
-
-@app.get("/share/")
-async def share(poster: str, url: str):
-    share_time = datetime.now()
-    html_name = share_time.strftime('%Y%m%d_%H:%M:%S') + '.html'
-
-    if not os.path.exists('html'):
-            os.makedirs('html')
-
-    with open(f'./html/{html_name}', 'w')as f:
-        f.write(requests.get(url).text)
-
-    engine = create_engine(config.db_url)
+@app.post("/messages/")
+async def publish(urls: List[str]=[]):
     Session = sessionmaker(bind=engine)()
-
-    ShareLog.metadata.create_all(engine)
-    share_log_table = Table(ShareLog.__tablename__, MetaData(), autoload_with=engine)
-    Session.execute(share_log_table.insert(),
-                    {"poster": poster, "url": url, "html_name": html_name, "share_time": share_time})
+    success_publish = []
+    for instance in Session.query(User).all():
+        for url in urls:
+            try:
+                line_bot_api.push_message(instance.user_id, TextSendMessage(text=url))
+                success_publish.append(url)
+            except LineBotApiError as e:
+                raise e
+    published_time = datetime.now()
+    Session.query(CollectLog)\
+        .filter(CollectLog.url.in_(success_publish))\
+        .update({\
+                 CollectLog.published: True,\
+                 CollectLog.published_time: published_time}, synchronize_session=False)
     Session.commit()
     Session.close()
+    print('message published')
+    return {"message": "published"}
 
-    return {"message": "Shared"}
+@app.post("/news/")
+async def collect(poster: str, url: str):
+    collect_time = datetime.now()
+    html = requests.get(url).text
+
+    Session = sessionmaker(bind=engine)()
+
+    CollectLog.metadata.create_all(engine)
+    collect_log_table = Table(CollectLog.__tablename__, MetaData(), autoload_with=engine)
+    Session.execute(collect_log_table.insert(),
+                    {"poster": poster, "url": url, "html": html, "collect_time": collect_time})
+    Session.commit()
+    Session.close()
+    print(f'{url} collected')
+
+    return {"message": "Collected"}
 
 @app.post('/callback/')
 async def callback(item: WebhookEventObject, request: Request):
@@ -93,7 +107,6 @@ def save_user_id(source):
         user_id = source.user_id
 
     # sqlalchemy orm
-    engine = create_engine(config.db_url)
     Session = sessionmaker(bind=engine)()
 
     User.metadata.create_all(engine)
@@ -121,4 +134,4 @@ def response_message(message):
 
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host=config.host, port=config.port, ssl_keyfile=config.key, ssl_certfile=config.cert)
+    uvicorn.run("main:app", host=config.host, port=config.port, ssl_keyfile=config.key, ssl_certfile=config.cert, reload=True)

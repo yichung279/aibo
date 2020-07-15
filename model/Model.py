@@ -8,16 +8,16 @@ from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
 
-class ShareLog(Base): # {{{
-    __tablename__ = 'share_log'
+class CollectLog(Base): # {{{
+    __tablename__ = 'collect_log'
 
     _id = Column(Integer, primary_key=True)
     poster = Column(Text)
     url = Column(Text)
     html = Column(Text)
-    share_time = Column(DateTime)
-    posted = Column(Boolean)
-    posted_time = Column(DateTime)
+    collect_time = Column(DateTime)
+    published = Column(Boolean)
+    published_time = Column(DateTime)
 
 # }}}
 
