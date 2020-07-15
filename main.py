@@ -4,6 +4,7 @@
 # standard import
 import json
 import os
+import re
 from datetime import datetime
 
 # third-party import
@@ -58,7 +59,7 @@ async def share(poster: str, url: str):
 
     ShareLog.metadata.create_all(engine)
     share_log_table = Table(ShareLog.__tablename__, MetaData(), autoload_with=engine)
-    Session.execute(share_log_table.insert(prefixes=['OR IGNORE']),
+    Session.execute(share_log_table.insert(),
                     {"poster": poster, "url": url, "html_name": html_name, "share_time": share_time})
     Session.commit()
     Session.close()
@@ -83,8 +84,8 @@ def handle_message(event):
             event.reply_token,
             TextSendMessage(text=eliza.initial())
         )
-    else:
-        said = event.message.text
+    elif re.findall(r'aibo', event.message.text):
+        said = event.message.text.replace('aibo', '')
         response = eliza.respond(said)
         if response is None:
             response = '開發中'
