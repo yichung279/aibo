@@ -13,8 +13,9 @@ from fastapi import FastAPI, Request
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError, LineBotApiError
 from linebot.models import MessageEvent, TextMessage, TextSendMessage
+from model.Model import User, ShareLog
 from pydantic import BaseModel
-from sqlalchemy import MetaData, create_engine
+from sqlalchemy import MetaData, Table, create_engine
 from sqlalchemy.orm import sessionmaker
 
 # local import
@@ -37,10 +38,14 @@ class Event_item(BaseModel):
 async def root():
     return {"message": "Hello World"}
 
+@app.get("/post/")
+async def post(urls: list):
+    return true
+
 @app.get("/share/")
 async def share(poster: str, url: str):
     share_time = datetime.now()
-    html_name = share_time.strftime('%Y%m%d_%H:%M:%S') + 'html'
+    html_name = share_time.strftime('%Y%m%d_%H:%M:%S') + '.html'
 
     if not os.path.exists('html'):
             os.makedirs('html')
@@ -49,10 +54,10 @@ async def share(poster: str, url: str):
         f.write(requests.get(url).text)
 
     engine = create_engine(config.db_url)
-    Session = sessionmaker()()
+    Session = sessionmaker(bind=engine)()
 
     ShareLog.metadata.create_all(engine)
-    share_log_table = MetaData(bind=engine, reflect=True).tables['share_log']
+    share_log_table = Table(ShareLog.__tablename__, MetaData(), autoload_with=engine)
     Session.execute(share_log_table.insert(prefixes=['OR IGNORE']),
                     {"poster": poster, "url": url, "html_name": html_name, "share_time": share_time})
     Session.commit()
@@ -97,10 +102,10 @@ def handle_message(event):
 
     # sqlalchemy orm
     engine = create_engine(config.db_url)
-    Session = sessionmaker()()
+    Session = sessionmaker(bind=engine)()
 
     User.metadata.create_all(engine)
-    user_table = MetaData(bind=engine, reflect=True).tables['user']
+    user_table = Table(User.__tablename__, MetaData(), autoload_with=engine)
 
     Session.execute(user_table.insert(prefixes=['OR IGNORE']), {"user_id": user_id})
     Session.commit()
