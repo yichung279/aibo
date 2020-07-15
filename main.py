@@ -11,6 +11,9 @@ from datetime import datetime
 import requests
 import uvicorn
 from fastapi import FastAPI, Request
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+from typing import List
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError, LineBotApiError
 from linebot.models import MessageEvent, TextMessage, TextSendMessage
@@ -26,12 +29,17 @@ from eliza import eliza
 
 
 app = FastAPI()
+app.mount("/static", StaticFiles(directory="web/dist"), name="static")
+
 line_bot_api = LineBotApi(config.access_token) # Channel Access Token
 handler = WebhookHandler(config.secret) # Channel Secret
 
 engine = create_engine(config.db_url)
 eliza = eliza.Eliza()
 eliza.load('doctor.txt')
+
+templates = Jinja2Templates(directory="web/dist")
+
 
 class WebhookEventObject(BaseModel):
     events: list
@@ -62,6 +70,15 @@ async def publish(urls: List[str]=[]):
     Session.close()
     print('message published')
     return {"message": "published"}
+
+@app.get("/check/")
+async def read_item(request: Request):
+    return templates.TemplateResponse("index.html", {'request': request})
+
+@app.get("/urls/")
+async def collect() -> List[str]:
+    urls = ['facebook.com', 'amazon.com', 'netflix.com', 'google.com']
+    return urls
 
 @app.post("/news/")
 async def collect(poster: str, url: str):
