@@ -31,7 +31,7 @@ handler = WebhookHandler(config.secret) # Channel Secret
 eliza = eliza.Eliza()
 eliza.load('doctor.txt')
 
-class Event_item(BaseModel):
+class WebhookEventObject(BaseModel):
     events: list
     destination: str
 
@@ -67,7 +67,7 @@ async def share(poster: str, url: str):
     return {"message": "Shared"}
 
 @app.post('/callback/')
-async def callback(item: Event_item, request: Request):
+async def callback(item: WebhookEventObject, request: Request):
     signature = request.headers['X-Line-Signature'] # get X-Line-Signature header value
     # keep string format as returned string of flask.requset.get_data()
     body = json.dumps(dict(item), ensure_ascii=False, separators=(',', ':'))
@@ -79,27 +79,18 @@ async def callback(item: Event_item, request: Request):
 
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
-    if event.message.text == '機器人你好':
-        line_bot_api.reply_message(
-            event.reply_token,
-            TextSendMessage(text=eliza.initial())
-        )
-    elif re.findall(r'aibo', event.message.text):
-        said = event.message.text.replace('aibo', '')
-        response = eliza.respond(said)
-        if response is None:
-            response = '開發中'
-        line_bot_api.reply_message(
-            event.reply_token,
-            TextSendMessage(text=response)
-        )
+    save_user_id(event.source)
+    response = response_message(event.message)
+    if response:
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=response))
 
-    if 'group' == event.source.type:
-        user_id = event.source.group_id
-    elif 'room' == event.source.type:
-        user_id = event.source.room_id
+def save_user_id(source):
+    if 'group' == source.type:
+        user_id = source.group_id
+    elif 'room' == source.type:
+        user_id = source.room_id
     else:
-        user_id = event.source.user_id
+        user_id = source.user_id
 
     # sqlalchemy orm
     engine = create_engine(config.db_url)
@@ -113,6 +104,20 @@ def handle_message(event):
     Session.close()
 
     print('user saved')
+
+def response_message(message):
+    response = None
+    text =  message.text.lower()
+    if text == '機器人你好':
+        response = eliza.initial()
+
+    elif re.findall(r'aibo', text):
+        said = text.replace('aibo', '')
+        response = eliza.respond(said)
+        if response is None:
+            response = '開發中'
+
+    return response
 
 
 if __name__ == "__main__":
