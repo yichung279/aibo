@@ -21,7 +21,7 @@ from model.Model import User, CollectLog
 from pydantic import BaseModel
 from sqlalchemy import MetaData, Table, create_engine
 from sqlalchemy.orm import sessionmaker
-from typing import List
+from typing import List, Optional
 
 # local import
 import config
@@ -41,26 +41,92 @@ eliza.load('doctor.txt')
 templates = Jinja2Templates(directory="web/dist")
 
 
+class Source(BaseModel):
+    type: str
+    userId: str
+    groupId: Optional[str]=None
+    roomId: Optional[str]=None
+
+class Emojis(BaseModel):
+    index: int
+    length: int
+    productId: str
+    emojiId: str
+
+class ContentProvider(BaseModel):
+    type: str
+    originalContentUrl: Optional[str]
+    previewImageUrl: Optional[str]
+
+class Message(BaseModel):
+    id: str
+    type: str
+    text: Optional[str]=None
+    emojis: Optional[List[Emojis]]=None
+    contentProvider: Optional[ContentProvider]=None
+    duration: Optional[int]=None
+    fileName: Optional[str]=None
+    fileSize: Optional[int]=None
+    title: Optional[str]=None
+    address: Optional[str]=None
+    latitude: Optional[float]=None
+    longitude: Optional[float]=None
+    packageId: Optional[str]=None
+    stickerId: Optional[str]=None
+    stickerResourceType: Optional[str]=None
+
+class Member(BaseModel):
+    type: str
+    userId: str
+
+class Members(BaseModel):
+    members: List[Member]
+
+class Event(BaseModel):
+    type: str
+    mode: str
+    timestamp: int
+    source: Source
+    replyToken: Optional[str]=None
+    message: Optional[Message]=None
+    joined: Optional[Members]=None
+    left: Optional[Members]=None
+    #! TODO
+    # Postback event
+    # Beacon event
+    # Account link event
+    # Device link event
+    # Device unlink event
+    # LINE Things scenario execution event
+
 class WebhookEventObject(BaseModel):
-    events: list
+    events: List[Event]
     destination: str
+
+class News(BaseModel):
+    poster: str
+    urls: List[str]
+
+class Oracle(BaseModel):
+    message: str
+
 
 @app.get("/")
 async def root():
     return {"message": "Hello World"}
 
 @app.post("/oracle/")
-async def broadcast(oracle: str):
+async def broadcast(oracle: Oracle):
     Session = sessionmaker(bind=engine)()
     for instance in Session.query(User).all():
         try:
-            line_bot_api.push_message(instance.user_id, TextSendMessage(text=oracle))
+            line_bot_api.push_message(instance.user_id, TextSendMessage(text=oracle.message))
         except LineBotApiError as e:
             raise e
     return {"message": "broadcasted"}
 
 @app.post("/messages/")
-async def publish(urls: List[str]=[]):
+async def publish(urls: List[str]):
     Session = sessionmaker(bind=engine)()
     success_publish = []
     for instance in Session.query(User).all():
@@ -88,15 +154,15 @@ async def collect() -> List[str]:
     return urls
 
 @app.post("/news/")
-async def collect(poster: str, urls: List[str]):
+async def collect(news: News):
     objects = []
     try:
-        for url in urls:
+        for url in news.urls:
             html = requests.get(url).text
             collect_time = datetime.now()
-            objects.append(CollectLog(poster=poster, url=url, html=html, collect_time=collect_time))
+            objects.append(CollectLog(poster=news.poster, url=url, html=html, collect_time=collect_time))
         collect_news_to_db(objects)
-        print(f'{urls} collected')
+        print(f'{news.urls} collected')
     except Exception as e:
         print(e)
     return {"message": "collected"}
