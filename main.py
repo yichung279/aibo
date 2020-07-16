@@ -115,6 +115,16 @@ def handle_message(event):
     if response:
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text=response))
 
+def get_latest_N_news() -> List[dict]:
+    Session = sessionmaker(bind=engine)()
+    q = Session.query(CollectLog).order_by(CollectLog.collect_time).limit(30)
+    latest_N_news = []
+    for instance in q:
+        instance = instance.__dict__
+        instance.pop('html', None)
+        latest_N_news.append(instance)
+    return latest_N_news
+
 def save_user_id(source):
     if 'group' == source.type:
         user_id = source.group_id
