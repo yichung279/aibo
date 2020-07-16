@@ -61,14 +61,11 @@ async def publish(urls: List[str]=[]):
             except LineBotApiError as e:
                 raise e
     published_time = datetime.now()
-    Session.query(CollectLog)\
-        .filter(CollectLog.url.in_(success_publish))\
-        .update({\
-                 CollectLog.published: True,\
-                 CollectLog.published_time: published_time}, synchronize_session=False)
-    Session.commit()
-    Session.close()
-    print('message published')
+    try:
+        update_collect_log(Session, published_time)
+        print('message published')
+    except Exception as e:
+        print(e)
     return {"message": "published"}
 
 @app.get("/check/")
@@ -81,20 +78,17 @@ async def collect() -> List[str]:
     return urls
 
 @app.post("/news/")
-async def collect(poster: str, url: str):
-    collect_time = datetime.now()
-    html = requests.get(url).text
-
-    Session = sessionmaker(bind=engine)()
-
-    CollectLog.metadata.create_all(engine)
-    collect_log_table = Table(CollectLog.__tablename__, MetaData(), autoload_with=engine)
-    Session.execute(collect_log_table.insert(),
-                    {"poster": poster, "url": url, "html": html, "collect_time": collect_time})
-    Session.commit()
-    Session.close()
-    print(f'{url} collected')
-
+async def collect(poster: str, urls: List[str]):
+    objects = []
+    try:
+        for url in urls:
+            html = requests.get(url).text
+            collect_time = datetime.now()
+            objects.append(CollectLog(poster=poster, url=url, html=html, collect_time=collect_time))
+        collect_news_to_db(objects)
+        print(f'{urls} collected')
+    except Exception as e:
+        print(e)
     return {"message": "Collected"}
 
 @app.post('/callback/')
@@ -115,9 +109,16 @@ def handle_message(event):
     if response:
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text=response))
 
-def get_latest_N_news() -> List[dict]:
+def collect_news_to_db(objects: List[object]):
     Session = sessionmaker(bind=engine)()
-    q = Session.query(CollectLog).order_by(CollectLog.collect_time).limit(30)
+    CollectLog.metadata.create_all(engine)
+    Session.bulk_save_objects(objects)
+    Session.commit()
+    Session.close()
+
+def get_latest_N_news(N: int) -> List[dict]:
+    Session = sessionmaker(bind=engine)()
+    q = Session.query(CollectLog).order_by(CollectLog.collect_time).limit(N)
     latest_N_news = []
     for instance in q:
         instance = instance.__dict__
@@ -158,6 +159,15 @@ def response_message(message):
             response = '開發中'
 
     return response
+
+def update_collect_log(session: object, published_time: datetime):
+    Session.query(CollectLog)\
+        .filter(CollectLog.url.in_(success_publish))\
+        .update({\
+                 CollectLog.published: True,\
+                 CollectLog.published_time: published_time}, synchronize_session=False)
+    Session.commit()
+    Session.close()
 
 
 if __name__ == "__main__":
