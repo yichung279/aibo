@@ -62,7 +62,7 @@ async def publish(urls: List[str]=[]):
                 raise e
     published_time = datetime.now()
     try:
-        update_collect_log(Session, published_time)
+        update_collect_log(Session, success_publish, published_time)
         print('message published')
     except Exception as e:
         print(e)
@@ -160,7 +160,7 @@ def response_message(message):
 
     return response
 
-def update_collect_log(session: object, published_time: datetime):
+def update_collect_log(Session: object, success_publish: List[str], published_time: datetime):
     Session.query(CollectLog)\
         .filter(CollectLog.url.in_(success_publish))\
         .update({\
