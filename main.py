@@ -41,66 +41,8 @@ eliza.load('doctor.txt')
 templates = Jinja2Templates(directory="web/dist")
 
 
-class Source(BaseModel):
-    type: str
-    userId: str
-    groupId: Optional[str]=None
-    roomId: Optional[str]=None
-
-class Emojis(BaseModel):
-    index: int
-    length: int
-    productId: str
-    emojiId: str
-
-class ContentProvider(BaseModel):
-    type: str
-    originalContentUrl: Optional[str]
-    previewImageUrl: Optional[str]
-
-class Message(BaseModel):
-    id: str
-    type: str
-    text: Optional[str]=None
-    emojis: Optional[List[Emojis]]=None
-    contentProvider: Optional[ContentProvider]=None
-    duration: Optional[int]=None
-    fileName: Optional[str]=None
-    fileSize: Optional[int]=None
-    title: Optional[str]=None
-    address: Optional[str]=None
-    latitude: Optional[float]=None
-    longitude: Optional[float]=None
-    packageId: Optional[str]=None
-    stickerId: Optional[str]=None
-    stickerResourceType: Optional[str]=None
-
-class Member(BaseModel):
-    type: str
-    userId: str
-
-class Members(BaseModel):
-    members: List[Member]
-
-class Event(BaseModel):
-    type: str
-    mode: str
-    timestamp: int
-    source: Source
-    replyToken: Optional[str]=None
-    message: Optional[Message]=None
-    joined: Optional[Members]=None
-    left: Optional[Members]=None
-    #! TODO
-    # Postback event
-    # Beacon event
-    # Account link event
-    # Device link event
-    # Device unlink event
-    # LINE Things scenario execution event
-
 class WebhookEventObject(BaseModel):
-    events: List[Event]
+    events: list
     destination: str
 
 class News(BaseModel):
