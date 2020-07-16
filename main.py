@@ -49,6 +49,16 @@ class WebhookEventObject(BaseModel):
 async def root():
     return {"message": "Hello World"}
 
+@app.post("/oracle/")
+async def broadcast(oracle: str):
+    Session = sessionmaker(bind=engine)()
+    for instance in Session.query(User).all():
+        try:
+            line_bot_api.push_message(instance.user_id, TextSendMessage(text=oracle))
+        except LineBotApiError as e:
+            raise e
+    return {"message": "broadcasted"}
+
 @app.post("/messages/")
 async def publish(urls: List[str]=[]):
     Session = sessionmaker(bind=engine)()
@@ -89,7 +99,7 @@ async def collect(poster: str, urls: List[str]):
         print(f'{urls} collected')
     except Exception as e:
         print(e)
-    return {"message": "Collected"}
+    return {"message": "collected"}
 
 @app.post('/callback/')
 async def callback(item: WebhookEventObject, request: Request):
