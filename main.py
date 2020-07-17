@@ -63,10 +63,8 @@ async def get_ui(request: Request, api_name: str):
         return templates.TemplateResponse("oracle.html", {'request': request})
     elif 'news' == api_name:
         return templates.TemplateResponse("news.html", {'request': request})
-    #! else if 'checkedNews' == api_name:
-        # return templates.TemplateResponse("checkedNews.html", {'request': request})
-    elif 'messages' == api_name:
-        return templates.TemplateResponse("messages.html", {'request': request})
+    elif 'checkedNews' == api_name:
+        return templates.TemplateResponse("checkedNews.html", {'request': request})
     else:
         return {"message": "no this ui"}
 
@@ -80,8 +78,7 @@ async def broadcast(oracle: Oracle):
             raise e
     return {"message": "broadcasted"}
 
-#! how about checkedNews
-@app.post("/messages/")
+@app.post("/checkedNews/")
 async def publish(urls: List[str]):
     Session = sessionmaker(bind=engine)()
     success_publish = []

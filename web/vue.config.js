@@ -16,11 +16,11 @@ module.exports = {
       filename: 'news.html',
       title: 'News Page',
     },
-    messages:{
-      entry: 'src/messages/main.js',
+    checkedNews:{
+      entry: 'src/checkedNews/main.js',
       template: 'public/index.html',
-      filename: 'messages.html',
-      title: 'Messages Page',
+      filename: 'checkedNews.html',
+      title: 'checkedNews Page',
     },
   },
 

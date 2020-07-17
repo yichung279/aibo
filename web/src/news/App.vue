@@ -1,13 +1,18 @@
 <template lang='pug'>
 #app.flex-container.content-center
   .flex-item.flex-container.flex-vertical.margin
-    .ui.left.icon.input
-      input(type='text', placeholder='user name...', v-model='message')
-      i.users.icon
-    .ui.action.input
-      input(type='text', placeholder='Type here...', v-model='message')
-      button.ui.button(@click='boardcast') Add url
-    .ui.button(@click='publish()') Publish
+    .flex-item.flex-container
+      .ui.left.icon.input.inner-margin
+        input(type='text', placeholder='user name...', v-model='poster')
+        i.users.icon
+      .ui.action.labeled.input.inner-margin
+        .ui.label https://
+        input(type='text', placeholder='Type here...', v-model='url')
+        button.left.ui.button(@click='addUrl') Add url
+    .ui.ordered.list.large
+      .item(v-for='url in addedUrls') {{ url }}
+    button.teal.ui.button(@click='upload') Upload
+
 </template>
 
 <script>
@@ -15,21 +20,30 @@ import axios from 'axios'
 
 export default {
   async mounted() {
-    // let resopnse = await axios.get('/urls/')
-    // console.log(resopnse.data)
-    // this.urls=resopnse.data
-    this.urls=['facebook.com', 'amazon.com', 'netflix.com', 'google.com']
   },
 
   data(){return{
-    urls: [],
-    checkedUrls: []
+    poster: '',
+    url: '',
+    addedUrls: []
   }},
 
   methods:{
-    async publish(){
-      await axios.post('/messages/', this.checkedUrls)
+
+    async addUrl(){
+      this.addedUrls.push('https://'+this.url)
+      this.url = ''
+    },
+
+    async upload(){
+      if(this.poster == '') this.poster = 'anonymous'
+      await axios.post('/news/', {
+        "poster": this.poster,
+        "urls": this.addedUrls
+      })
+      this.poster = ''
     }
+
   }
 }
 </script>
@@ -43,9 +57,11 @@ export default {
   flex-direction: column
 .flex-horizental
   flex-direction: row
+.list
+  padding: 0 2rem!important
 .margin
   margin: 3rem
-.input
-  margin: 1rem
+.inner-margin
+  margin: 0.3rem
 
 </style>

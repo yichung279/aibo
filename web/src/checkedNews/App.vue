@@ -4,7 +4,7 @@
     .ui.vertical.menu.fluid
       .item(v-for="value in news")
         .ui.checkbox
-          input(type='checkbox', :value='value', v-model='checkedNews')
+          input(type='checkbox', :value='value.url', v-model='checkedNews')
           label
             a(:href='value.url')  {{ value.url }}
         .ui.label {{ value.poster }}
@@ -17,7 +17,6 @@ import axios from 'axios'
 export default {
   async mounted() {
     // let resopnse = await axios.get('/news/5')
-    // console.log(resopnse.data)
     // const news=resopnse.data
     const news = [{published_time:null,collect_time:"2020-07-17T15:45:25.240321",poster:"yiz",published:null,url:"https://facebook.com",_id:1},{published_time:null,collect_time:"2020-07-17T15:45:26.675134",poster:"yiz",published:null,url:"https://amazon.com",_id:2},{published_time:null,collect_time:"2020-07-17T15:45:29.723983",poster:"yiz",published:null,url:"https://netflix.com",_id:3}]
     news.forEach((value, i) => {
@@ -32,7 +31,7 @@ export default {
 
   methods:{
     async publish(){
-      await axios.post('/messages/', this.checkedNews)
+      await axios.post('/checkedNews/', this.checkedNews)
     }
   }
 }
