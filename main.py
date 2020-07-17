@@ -57,6 +57,19 @@ class Oracle(BaseModel):
 async def root():
     return {"message": "Hello World"}
 
+@app.get("/ui/{api_name}")
+async def get_ui(request: Request, api_name: str):
+    if 'oracle' == api_name:
+        return templates.TemplateResponse("oracle.html", {'request': request})
+    elif 'news' == api_name:
+        return templates.TemplateResponse("news.html", {'request': request})
+    #! else if 'checkedNews' == api_name:
+        # return templates.TemplateResponse("checkedNews.html", {'request': request})
+    elif 'messages' == api_name:
+        return templates.TemplateResponse("messages.html", {'request': request})
+    else:
+        return {"message": "no this ui"}
+
 @app.post("/oracle/")
 async def broadcast(oracle: Oracle):
     Session = sessionmaker(bind=engine)()
@@ -67,6 +80,7 @@ async def broadcast(oracle: Oracle):
             raise e
     return {"message": "broadcasted"}
 
+#! how about checkedNews
 @app.post("/messages/")
 async def publish(urls: List[str]):
     Session = sessionmaker(bind=engine)()
@@ -86,14 +100,16 @@ async def publish(urls: List[str]):
         print(e)
     return {"message": "published"}
 
-@app.get("/check/")
-async def read_item(request: Request):
-    return templates.TemplateResponse("index.html", {'request': request})
-
-@app.get("/urls/")
-async def collect() -> List[str]:
-    urls = ['facebook.com', 'amazon.com', 'netflix.com', 'google.com']
-    return urls
+@app.get("/news/{num_news}")
+def get_latest_num_news(num_news: int):
+    Session = sessionmaker(bind=engine)()
+    q = Session.query(CollectLog).order_by(CollectLog.collect_time).limit(num_news)
+    latest_N_news = []
+    for instance in q:
+        instance = instance.__dict__
+        instance.pop('html', None)
+        latest_N_news.append(instance)
+    return latest_N_news
 
 @app.post("/news/")
 async def collect(news: News):
@@ -133,16 +149,6 @@ def collect_news_to_db(objects: List[object]):
     Session.bulk_save_objects(objects)
     Session.commit()
     Session.close()
-
-def get_latest_N_news(N: int) -> List[dict]:
-    Session = sessionmaker(bind=engine)()
-    q = Session.query(CollectLog).order_by(CollectLog.collect_time).limit(N)
-    latest_N_news = []
-    for instance in q:
-        instance = instance.__dict__
-        instance.pop('html', None)
-        latest_N_news.append(instance)
-    return latest_N_news
 
 def save_user_id(source):
     if 'group' == source.type:

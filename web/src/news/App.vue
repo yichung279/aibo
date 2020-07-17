@@ -1,12 +1,12 @@
 <template lang='pug'>
 #app.flex-container.content-center
-  .flex-item.flex-container.flex-vertical.padding
-    .ui.vertical.menu
-      .item(v-for="url in urls")
-        .ui.checkbox
-          input(type='checkbox', :value='url', v-model='checkedUrls')
-          label
-            a(:href='url')  {{ url }}
+  .flex-item.flex-container.flex-vertical.margin
+    .ui.left.icon.input
+      input(type='text', placeholder='user name...', v-model='message')
+      i.users.icon
+    .ui.action.input
+      input(type='text', placeholder='Type here...', v-model='message')
+      button.ui.button(@click='boardcast') Add url
     .ui.button(@click='publish()') Publish
 </template>
 
@@ -41,7 +41,11 @@ export default {
   justify-content: center
 .flex-vertical
   flex-direction: column
-.padding
-  padding: 3rem
+.flex-horizental
+  flex-direction: row
+.margin
+  margin: 3rem
+.input
+  margin: 1rem
 
 </style>
