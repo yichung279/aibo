@@ -15,10 +15,11 @@
 import axios from 'axios'
 
 export default {
-  async mounted() {
-    // let resopnse = await axios.get('/news/5')
-    // const news=resopnse.data
-    const news = [{published_time:null,collect_time:"2020-07-17T15:45:25.240321",poster:"yiz",published:null,url:"https://facebook.com",_id:1},{published_time:null,collect_time:"2020-07-17T15:45:26.675134",poster:"yiz",published:null,url:"https://amazon.com",_id:2},{published_time:null,collect_time:"2020-07-17T15:45:29.723983",poster:"yiz",published:null,url:"https://netflix.com",_id:3}]
+  mounted() {
+    let resopnse = await axios.get('/news/5')
+    const news=resopnse.data
+    // mock
+    // const news = [{published_time:null,collect_time:"2020-07-17T15:45:25.240321",poster:"yiz",published:null,url:"https://facebook.com",_id:1},{published_time:null,collect_time:"2020-07-17T15:45:26.675134",poster:"yiz",published:null,url:"https://amazon.com",_id:2},{published_time:null,collect_time:"2020-07-17T15:45:29.723983",poster:"yiz",published:null,url:"https://netflix.com",_id:3}]
     news.forEach((value, i) => {
       this.$set(this.news, i, value)
     })
@@ -30,8 +31,8 @@ export default {
   }},
 
   methods:{
-    async publish(){
-      await axios.post('/checkedNews/', this.checkedNews)
+    publish(){
+      axios.post('/checkedNews/', this.checkedNews)
     }
   }
 }

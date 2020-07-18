@@ -17,8 +17,8 @@ export default {
   }},
 
   methods:{
-    async boardcast(){
-      await axios.post('/oracle/', {"message": this.message})
+    boardcast(){
+      axios.post('/oracle/', {"message": this.message})
     }
   }
 }

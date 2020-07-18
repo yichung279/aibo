@@ -21,7 +21,7 @@ from model.Model import User, CollectLog
 from pydantic import BaseModel
 from sqlalchemy import MetaData, Table, create_engine
 from sqlalchemy.orm import sessionmaker
-from typing import List, Optional
+from typing import List
 
 # local import
 import config
@@ -68,6 +68,17 @@ async def get_ui(request: Request, api_name: str):
     else:
         return {"message": "no this ui"}
 
+@app.get("/news/{num_news}")
+def get_latest_num_news(num_news: int):
+    Session = sessionmaker(bind=engine)()
+    q = Session.query(CollectLog).order_by(CollectLog.collect_time).limit(num_news)
+    latest_N_news = []
+    for instance in q:
+        instance = instance.__dict__
+        instance.pop('html', None)
+        latest_N_news.append(instance)
+    return latest_N_news
+
 @app.post("/oracle/")
 async def broadcast(oracle: Oracle):
     Session = sessionmaker(bind=engine)()
@@ -96,17 +107,6 @@ async def publish(urls: List[str]):
     except Exception as e:
         print(e)
     return {"message": "published"}
-
-@app.get("/news/{num_news}")
-def get_latest_num_news(num_news: int):
-    Session = sessionmaker(bind=engine)()
-    q = Session.query(CollectLog).order_by(CollectLog.collect_time).limit(num_news)
-    latest_N_news = []
-    for instance in q:
-        instance = instance.__dict__
-        instance.pop('html', None)
-        latest_N_news.append(instance)
-    return latest_N_news
 
 @app.post("/news/")
 async def collect(news: News):

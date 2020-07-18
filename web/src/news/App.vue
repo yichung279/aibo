@@ -30,14 +30,14 @@ export default {
 
   methods:{
 
-    async addUrl(){
+    addUrl(){
       this.addedUrls.push('https://'+this.url)
       this.url = ''
     },
 
-    async upload(){
+    upload(){
       if(this.poster == '') this.poster = 'anonymous'
-      await axios.post('/news/', {
+      axios.post('/news/', {
         "poster": this.poster,
         "urls": this.addedUrls
       })
