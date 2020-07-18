@@ -15,7 +15,7 @@
 import axios from 'axios'
 
 export default {
-  mounted() {
+  async mounted() {
     let resopnse = await axios.get('/news/5')
     const news=resopnse.data
     // mock

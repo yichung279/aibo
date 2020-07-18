@@ -61,10 +61,10 @@ async def root():
 async def get_ui(request: Request, api_name: str):
     if 'oracle' == api_name:
         return templates.TemplateResponse("oracle.html", {'request': request})
-    elif 'news' == api_name:
-        return templates.TemplateResponse("news.html", {'request': request})
-    elif 'checkedNews' == api_name:
-        return templates.TemplateResponse("checkedNews.html", {'request': request})
+    elif 'shareNews' == api_name:
+        return templates.TemplateResponse("shareNews.html", {'request': request})
+    elif 'checkNews' == api_name:
+        return templates.TemplateResponse("checkNews.html", {'request': request})
     else:
         return {"message": "no this ui"}
 

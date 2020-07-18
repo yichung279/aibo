@@ -10,17 +10,17 @@ module.exports = {
       filename: 'oracle.html',
       title: 'Oracle Page',
     },
-    news:{
-      entry: 'src/news/main.js',
+    shareNews:{
+      entry: 'src/shareNews/main.js',
       template: 'public/index.html',
-      filename: 'news.html',
-      title: 'News Page',
+      filename: 'shareNews.html',
+      title: 'addNews Page',
     },
-    checkedNews:{
-      entry: 'src/checkedNews/main.js',
+    checkNews:{
+      entry: 'src/checkNews/main.js',
       template: 'public/index.html',
-      filename: 'checkedNews.html',
-      title: 'checkedNews Page',
+      filename: 'checkNews.html',
+      title: 'checkNews Page',
     },
   },
 
