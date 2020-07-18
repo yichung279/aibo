@@ -42,6 +42,7 @@ export default {
         "urls": this.addedUrls
       })
       this.poster = ''
+      this.addedUrls = ''
     }
 
   }

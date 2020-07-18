@@ -14,7 +14,7 @@ module.exports = {
       entry: 'src/shareNews/main.js',
       template: 'public/index.html',
       filename: 'shareNews.html',
-      title: 'addNews Page',
+      title: 'shareNews Page',
     },
     checkNews:{
       entry: 'src/checkNews/main.js',
