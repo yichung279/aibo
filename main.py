@@ -77,6 +77,7 @@ def get_latest_num_news(num_news: int):
         instance = instance.__dict__
         instance.pop('html', None)
         latest_N_news.append(instance)
+    Session.close()
     return latest_N_news
 
 @app.post("/oracle/")
@@ -87,6 +88,7 @@ async def broadcast(oracle: Oracle):
             line_bot_api.push_message(instance.user_id, TextSendMessage(text=oracle.message))
         except LineBotApiError as e:
             raise e
+    Session.close()
     return {"message": "broadcasted"}
 
 @app.post("/checkedNews/")
@@ -106,6 +108,7 @@ async def publish(urls: List[str]):
         print('message published')
     except Exception as e:
         print(e)
+    Session.close()
     return {"message": "published"}
 
 @app.post("/news/")
