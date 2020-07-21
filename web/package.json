@@ -12,6 +12,7 @@
     "pug": "^3.0.0",
     "pug-plain-loader": "^1.0.0",
     "semantic-ui-offline": "^2.4.1",
+    "sweetalert2": "^9.17.0",
     "vue": "^2.6.11"
   },
   "devDependencies": {

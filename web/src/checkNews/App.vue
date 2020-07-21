@@ -4,7 +4,7 @@
     .ui.vertical.menu.fluid
       .item(v-for="value in news")
         .ui.checkbox
-          input(type='checkbox', :value='value.url', v-model='checkedNews')
+          input(type='checkbox', :disabled='value.checked', :value='value.url', v-model='checkedNews')
           label
             a(:href='value.url')  {{ value.url }}
         .ui.label {{ value.poster }}
@@ -13,13 +13,14 @@
 
 <script>
 import axios from 'axios'
+import Swal from 'sweetalert2'
 
 export default {
   async mounted() {
-    let resopnse = await axios.get('/news/5')
-    const news=resopnse.data
+    let resopnse = await axios.get('/news/30')
+    const news = resopnse.data
     // mock
-    // const news = [{published_time:null,collect_time:"2020-07-17T15:45:25.240321",poster:"yiz",published:null,url:"https://facebook.com",_id:1},{published_time:null,collect_time:"2020-07-17T15:45:26.675134",poster:"yiz",published:null,url:"https://amazon.com",_id:2},{published_time:null,collect_time:"2020-07-17T15:45:29.723983",poster:"yiz",published:null,url:"https://netflix.com",_id:3}]
+    // const news = [{published_time:null,checked: true, checked_time: "2020-07-17T15:45:25.240321",collect_time:"2020-07-17T15:45:25.240321",poster:"yiz",published:null,url:"https://facebook.com",_id:1},{published_time:null,collect_time:"2020-07-17T15:45:26.675134",poster:"yiz",published:null,url:"https://amazon.com",_id:2},{published_time:null,collect_time:"2020-07-17T15:45:29.723983",poster:"yiz",published:null,url:"https://netflix.com",_id:3}]
     news.forEach((value, i) => {
       this.$set(this.news, i, value)
     })
@@ -33,6 +34,13 @@ export default {
   methods:{
     publish(){
       axios.post('/checkedNews/', this.checkedNews)
+	  Swal.fire({
+		title: 'News\' have been saved',
+		icon: 'success',
+        onAfterClose: function(){
+          location.reload()
+        }
+	  })
     }
   }
 }
