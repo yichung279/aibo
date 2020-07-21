@@ -16,6 +16,8 @@ class CollectLog(Base): # {{{
     url = Column(Text)
     html = Column(Text)
     collect_time = Column(DateTime)
+    checked = Column(Boolean)
+    checked_time = Column(DateTime)
     published = Column(Boolean)
     published_time = Column(DateTime)
 

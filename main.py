@@ -19,7 +19,7 @@ from linebot.exceptions import InvalidSignatureError, LineBotApiError
 from linebot.models import MessageEvent, TextMessage, TextSendMessage
 from model.Model import User, CollectLog
 from pydantic import BaseModel
-from sqlalchemy import MetaData, Table, create_engine
+from sqlalchemy import MetaData, Table, create_engine, extract
 from sqlalchemy.orm import sessionmaker
 from typing import List
 
@@ -92,24 +92,31 @@ async def broadcast(oracle: Oracle):
     return {"message": "broadcasted"}
 
 @app.post("/checkedNews/")
-async def publish(urls: List[str]):
+async def check(urls: List[str]):
     Session = sessionmaker(bind=engine)()
-    success_publish = []
-    for instance in Session.query(User).all():
-        for url in urls:
-            try:
-                line_bot_api.push_message(instance.user_id, TextSendMessage(text=url))
-                success_publish.append(url)
-            except LineBotApiError as e:
-                raise e
-    published_time = datetime.now()
     try:
-        update_collect_log(Session, success_publish, published_time)
-        print('message published')
+        update_checked(Session, urls, datetime.now())
+        print('checked urls have been saved')
     except Exception as e:
         print(e)
     Session.close()
-    return {"message": "published"}
+    return {"message": "Checked news have been saved"}
+    # active post news
+    # success_publish = []
+    # for instance in Session.query(User).all():
+    #     for url in urls:
+    #         try:
+    #             line_bot_api.push_message(instance.user_id, TextSendMessage(text=url))
+    #             success_publish.append(url)
+    #         except LineBotApiError as e:
+    #             raise e
+    # published_time = datetime.now()
+    # try:
+    #     update_published(Session, success_publish, published_time)
+    #     print('message published')
+    # except Exception as e:
+    #     print(e)
+    # return {"message": "published"}
 
 @app.post("/news/")
 async def collect(news: News):
@@ -150,6 +157,17 @@ def collect_news_to_db(objects: List[object]):
     Session.commit()
     Session.close()
 
+def get_checked_news(date):
+    Session = sessionmaker(bind=engine)()
+    q = Session.query(CollectLog.url)\
+            .filter(extract('year', CollectLog.checked_time) == date.year,
+                extract('month', CollectLog.checked_time) == date.month,
+                extract('day', CollectLog.checked_time) == date.day)
+    checked_news = []
+    for idx, (url,) in enumerate(q):
+        checked_news.append(f'{idx + 1}. {url}')
+    return '\n'.join(checked_news)
+
 def save_user_id(source):
     if 'group' == source.type:
         user_id = source.group_id
@@ -158,7 +176,6 @@ def save_user_id(source):
     else:
         user_id = source.user_id
 
-    # sqlalchemy orm
     Session = sessionmaker(bind=engine)()
 
     User.metadata.create_all(engine)
@@ -175,7 +192,9 @@ def response_message(message):
     text =  message.text.lower()
     if text == '機器人你好':
         response = eliza.initial()
-
+    elif text == 'aibo 新聞':
+        checked_news = get_checked_news(datetime.today())
+        response = checked_news
     elif re.findall(r'aibo', text):
         said = text.replace('aibo', '')
         response = eliza.respond(said)
@@ -184,7 +203,16 @@ def response_message(message):
 
     return response
 
-def update_collect_log(Session: object, success_publish: List[str], published_time: datetime):
+def update_checked(Session: object, checked_urls: List[str], checked_time: datetime):
+    Session.query(CollectLog)\
+        .filter(CollectLog.url.in_(checked_urls))\
+        .update({\
+                 CollectLog.checked: True,\
+                 CollectLog.checked_time: checked_time}, synchronize_session=False)
+    Session.commit()
+    Session.close()
+
+def update_published(Session: object, success_publish: List[str], published_time: datetime):
     Session.query(CollectLog)\
         .filter(CollectLog.url.in_(success_publish))\
         .update({\
