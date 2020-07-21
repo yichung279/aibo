@@ -17,6 +17,7 @@
 
 <script>
 import axios from 'axios'
+import Swal from 'sweetalert2'
 
 export default {
   async mounted() {
@@ -31,7 +32,7 @@ export default {
   methods:{
 
     addUrl(){
-      this.addedUrls.push('https://'+this.url)
+      this.addedUrls.push(this.url)
       this.url = ''
     },
 
@@ -41,8 +42,12 @@ export default {
         "poster": this.poster,
         "urls": this.addedUrls
       })
+	  Swal.fire({
+		title: 'News\' have been saved',
+		icon: 'success',
+	  })
       this.poster = ''
-      this.addedUrls = ''
+      this.addedUrls = []
     }
 
   }
