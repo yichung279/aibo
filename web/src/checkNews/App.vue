@@ -1,13 +1,26 @@
 <template lang='pug'>
 #app.flex-container.content-center
   .flex-item.flex-container.flex-vertical.margin
-    .ui.vertical.menu.fluid
-      .item(v-for="value in news")
-        .ui.checkbox
-          input(type='checkbox', :disabled='value.checked', :value='value.url', v-model='checkedNews')
-          label
-            a(:href='value.url')  {{ value.url }}
-        .ui.label {{ value.poster }}
+    table.ui.celled.table
+      thead
+        tr
+          th URL
+          th Collected time
+          th Checked time
+          th Published time
+          th Poster
+      tbody
+        tr(v-for="value in news", :class="{ checked: value.checked }")
+          td
+            .ui.checkbox
+              input(type='checkbox', :disabled='value.checked', :value='value.url', v-model='checkedNews')
+              label
+                a(:href='value.url') {{ value.url }}
+          td {{ value.collect_time }}
+          td {{ value.checked_time }}
+          td {{ value.published_time }}
+          td
+            .ui.label {{ value.poster }}
     .ui.button(@click='publish()') Save
 </template>
 
@@ -49,11 +62,17 @@ export default {
 <style lang="sass">
 .flex-container
   display: flex
+
 .content-center
   justify-content: center
+
 .flex-vertical
   flex-direction: column
+
 .margin
   margin: 2rem
+
+tr.checked
+  background: #f0ffcc!important
 
 </style>

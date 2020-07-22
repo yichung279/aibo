@@ -33,6 +33,7 @@ app.mount("/static", StaticFiles(directory="web/dist"), name="static")
 
 line_bot_api = LineBotApi(config.access_token) # Channel Access Token
 handler = WebhookHandler(config.secret) # Channel Secret
+headers = {"content-type": "application/json; charset=UTF-8",'Authorization':'Bearer {}'.format(config.access_token)}
 
 engine = create_engine(config.db_url)
 eliza = eliza.Eliza()
@@ -172,8 +173,9 @@ def get_checked_news(date):
 def save_user_id(source):
     if 'group' == source.type:
         user_id = source.group_id
-        # summary = line_bot_api.get_group_summary(user_id)
-        user_name = 'group'
+        url = 'https://api.line.me/v2/bot/group/' + user_id + '/summary'
+        response = requests.get(url, headers=headers)
+        user_name = response.json()['groupName']
     elif 'room' == source.type:
         user_id = source.room_id
         user_name = 'room'
