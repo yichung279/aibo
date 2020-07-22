@@ -166,22 +166,28 @@ def get_checked_news(date):
     checked_news = []
     for idx, (url,) in enumerate(q):
         checked_news.append(f'{idx + 1}. {url}')
+    print(checked_news)
     return '\n'.join(checked_news)
 
 def save_user_id(source):
     if 'group' == source.type:
         user_id = source.group_id
+        # summary = line_bot_api.get_group_summary(user_id)
+        user_name = 'group'
     elif 'room' == source.type:
         user_id = source.room_id
+        user_name = 'room'
     else:
         user_id = source.user_id
+        profile = line_bot_api.get_profile(user_id)
+        user_name = profile.display_name
 
     Session = sessionmaker(bind=engine)()
 
     User.metadata.create_all(engine)
     user_table = Table(User.__tablename__, MetaData(), autoload_with=engine)
 
-    Session.execute(user_table.insert(prefixes=['OR IGNORE']), {"user_id": user_id})
+    Session.execute(user_table.insert(prefixes=['OR IGNORE']), {"user_id": user_id, "user_name": user_name})
     Session.commit()
     Session.close()
 
@@ -192,7 +198,7 @@ def response_message(message):
     text =  message.text.lower()
     if text == '機器人你好':
         response = eliza.initial()
-    elif text == 'aibo 新聞':
+    elif re.findall(r'aibo.*?新聞', text):
         checked_news = get_checked_news(datetime.today())
         response = checked_news
     elif re.findall(r'aibo', text):

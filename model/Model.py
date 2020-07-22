@@ -28,4 +28,5 @@ class User(Base): #{{{
 
     _id = Column(Integer, primary_key=True)
     user_id = Column(Text, unique=True)
+    user_name = Column(Text)
 # }}}

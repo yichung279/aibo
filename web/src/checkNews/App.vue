@@ -8,7 +8,7 @@
           label
             a(:href='value.url')  {{ value.url }}
         .ui.label {{ value.poster }}
-    .ui.button(@click='publish()') Publish
+    .ui.button(@click='publish()') Save
 </template>
 
 <script>
