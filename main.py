@@ -11,6 +11,7 @@ from datetime import datetime
 import requests
 import uvicorn
 from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware # for dev
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from typing import List
@@ -29,6 +30,13 @@ from eliza import eliza
 
 
 app = FastAPI()
+app.add_middleware( # for dev
+        CORSMiddleware,
+        allow_origins=config.origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+)
 app.mount("/static", StaticFiles(directory="web/dist"), name="static")
 
 line_bot_api = LineBotApi(config.access_token) # Channel Access Token
@@ -62,10 +70,8 @@ async def root():
 async def get_ui(request: Request, api_name: str):
     if 'oracle' == api_name:
         return templates.TemplateResponse("oracle.html", {'request': request})
-    elif 'shareNews' == api_name:
-        return templates.TemplateResponse("shareNews.html", {'request': request})
-    elif 'checkNews' == api_name:
-        return templates.TemplateResponse("checkNews.html", {'request': request})
+    elif 'news' == api_name:
+        return templates.TemplateResponse("news.html", {'request': request})
     else:
         return {"message": "no this ui"}
 
