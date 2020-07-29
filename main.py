@@ -98,24 +98,16 @@ async def broadcast(oracle: Oracle):
     Session.close()
     return {"message": "broadcasted"}
 
-@app.post("/checkedNews/")
-async def check(urls: List[str], deletedUrls: List[str]):
+@app.post("/checkNews/")
+async def check(urls: List[str]):
     Session = sessionmaker(bind=engine)()
     try:
         update_checked(Session, urls)
-        print('checked urls have been saved')
-    except Exception as e:
-        print(e)
-    try:
-        Session.query(CollectLog)\
-            .filter(CollectLog.url.in_(deletedUrls))\
-            .delete(synchronize_session=False)
-        Session.commit()
-        print(f'{deletedUrls} have been deleted')
+        print(f'{urls} have been checked')
     except Exception as e:
         print(e)
     Session.close()
-    return {"message": "Checked news have been saved"}
+    return {"message": "checked"}
     # active post news
     # success_publish = []
     # for instance in Session.query(User).all():
@@ -157,6 +149,20 @@ async def callback(item: WebhookEventObject, request: Request):
     except InvalidSignatureError as e:
         print(e)
     return 'OK'
+
+@app.post('/deleteNews/')
+async def delete_news(urls: List[str]):
+    Session = sessionmaker(bind=engine)()
+    try:
+        Session.query(CollectLog)\
+            .filter(CollectLog.url.in_(urls))\
+            .delete(synchronize_session=False)
+        Session.commit()
+        print(f'{urls} have been deleted')
+    except Exception as e:
+        print(e)
+    Session.close()
+    return {"message": "deleted"}
 
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):

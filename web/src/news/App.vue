@@ -9,9 +9,10 @@
         input(type='text', placeholder='Type here...', v-model='url')
         button.left.ui.button(@click='addUrl') Add url
     .ui.list.large
-      .ui.label(v-for='(url, index) in addedUrls') {{ url }}
+      .ui.label(v-for='(url, index) in addedUrls') {{ url.slice(0, 30) }}
         i.delete.icon(@click='removeAddedUrl(index)')
-    button.teal.ui.button(@click='upload') Upload
+    div
+      button.primary.ui.button(@click='upload') Upload
     table.ui.celled.table
       thead
         tr
@@ -21,18 +22,20 @@
           th Published time
           th Poster
       tbody
-        tr(v-for="(value, index) in news", :class="{ positive: value.checked , negative: value.deleted}", @click="deleteNews($event, index)")
+        tr(v-for="(value, index) in news", :class="{ positive: value.checked }")
           td
             .ui.checkbox
-              input(type='checkbox', :disabled='value.checked', :value='value.url', v-model='checkedNews', @click.stop)
+              input(type='checkbox', :value='value.url', v-model='selectedNews', @click.stop)
               label
-                a(:href='value.url', @click.stop, target='_blank') {{ value.url }}
+                a(:href='value.url', @click.stop, target='_blank') {{ value.url.slice(0, 30) }}
           td {{ value.collect_time }}
           td {{ value.checked_time }}
           td {{ value.published_time }}
           td
             .ui.label {{ value.poster }}
-    .ui.button(@click='publish()', v-if='auditor') Save
+    .flex-item
+      button.primary.ui.button(@click='checkNews', v-if='auditor') Check
+      button.ui.button(@click='deleteNews', v-if='auditor') Delete
 </template>
 
 <script>
@@ -54,8 +57,7 @@ export default {
     url: '',
     addedUrls: [],
     news: [],
-    deletedNews: [],
-    checkedNews: [],
+    selectedNews: []
   }},
 
   methods:{
@@ -74,29 +76,35 @@ export default {
     },
 
     deleteNews(event, index){
-      if (this.news[index].deleted) this.deletedNews.splice(this.deletedNews.indexOf(this.news[index].url), 1)
-      else this.deletedNews.push(this.news[index].url)
-
-      this.$set(this.news[index], 'deleted', !this.news[index].deleted)
+      axios.post('/deleteNews/', this.selectedNews)
+      const vthis = this
+	  Swal.fire({
+        title: 'News\' have been deleted',
+		icon: 'success',
+        showConfirmButton: false,
+        timer: 900,
+        onAfterClose: function(){
+          vthis.getNews()
+          vthis.selectedNews = []
+        }
+	  })
     },
 
     removeAddedUrl(index){
       this.addedUrls.splice(index, 1)
     },
 
-    publish(){
-      axios.post('/checkedNews/', {
-        "urls": this.checkedNews,
-        "deletedUrls": this.deletedNews
-      })
+    checkNews(){
+      axios.post('/checkNews/', this.selectedNews)
       const vthis = this
 	  Swal.fire({
-		position: 'top-end',
-        title: 'News\' have been saved',
+        title: 'News\' have been checked',
 		icon: 'success',
+        showConfirmButton: false,
+        timer: 900,
         onAfterClose: function(){
           vthis.getNews()
-          vthis.deletedUrls = []
+          vthis.selectedNews = []
         }
 	  })
     },
@@ -109,9 +117,10 @@ export default {
       })
       const vthis = this
 	  Swal.fire({
-		position: 'top-end',
         title: 'News\' have been saved',
 		icon: 'success',
+        showConfirmButton: false,
+        timer: 900,
         onAfterClose: function(){
           vthis.$vlf.setItem('author', vthis.poster).catch(err => {
             console.log(err)
