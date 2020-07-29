@@ -9,7 +9,7 @@
         input(type='text', placeholder='Type here...', v-model='url')
         button.left.ui.button(@click='addUrl') Add url
     .ui.list.large
-      .ui.label(v-for='(url, index) in addedUrls') {{ url.slice(0, 30) }}
+      .ui.label(v-for='(url, index) in addedUrls') {{ url.slice(0, 30) + '...' }}
         i.delete.icon(@click='removeAddedUrl(index)')
     div
       button.primary.ui.button(@click='upload') Upload
@@ -25,9 +25,9 @@
         tr(v-for="(value, index) in news", :class="{ positive: value.checked }")
           td
             .ui.checkbox
-              input(type='checkbox', :value='value.url', v-model='selectedNews', @click.stop)
+              input(type='checkbox', :value='value.url', v-model='selectedNews', @click.stop, :disabled='!auditor')
               label
-                a(:href='value.url', @click.stop, target='_blank') {{ value.url.slice(0, 30) }}
+                a(:href='value.url', @click.stop, target='_blank') {{ value.url }}
           td {{ value.collect_time }}
           td {{ value.checked_time }}
           td {{ value.published_time }}
@@ -42,6 +42,7 @@
 import axios from 'axios'
 import Swal from 'sweetalert2'
 
+const origins = 'https://merry.ee.ncku.edu.tw:1092'
 export default {
   async mounted() {
     this.$vlf.getItem('author').then(value => {
@@ -67,7 +68,7 @@ export default {
     },
 
     async getNews(){
-      let resopnse = await axios.get('/news/30')
+      let resopnse = await axios.get(`${origins}/news/30`)
       const news = resopnse.data
       this.news = []
       news.forEach((value, i) => {
@@ -76,7 +77,7 @@ export default {
     },
 
     deleteNews(event, index){
-      axios.post('/deleteNews/', this.selectedNews)
+      axios.post(`${origins}/deleteNews/`, this.selectedNews)
       const vthis = this
 	  Swal.fire({
         title: 'News\' have been deleted',
@@ -95,7 +96,7 @@ export default {
     },
 
     checkNews(){
-      axios.post('/checkNews/', this.selectedNews)
+      axios.post(`${origins}/checkNews/`, this.selectedNews)
       const vthis = this
 	  Swal.fire({
         title: 'News\' have been checked',
@@ -111,7 +112,7 @@ export default {
 
     upload(){
       if(this.poster == '') this.poster = 'anonymous'
-      axios.post('/news/', {
+      axios.post(`${origins}/news/`, {
         "poster": this.poster,
         "urls": this.addedUrls
       })
@@ -135,6 +136,13 @@ export default {
 </script>
 
 <style lang="sass">
+a
+  display: block
+  width: 200px
+  white-space: nowrap
+  text-overflow: ellipsis
+  overflow: hidden
+
 .content-center
   justify-content: center
 
