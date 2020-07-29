@@ -99,11 +99,19 @@ async def broadcast(oracle: Oracle):
     return {"message": "broadcasted"}
 
 @app.post("/checkedNews/")
-async def check(urls: List[str]):
+async def check(urls: List[str], deletedUrls: List[str]):
     Session = sessionmaker(bind=engine)()
     try:
-        update_checked(Session, urls, datetime.now())
+        update_checked(Session, urls)
         print('checked urls have been saved')
+    except Exception as e:
+        print(e)
+    try:
+        Session.query(CollectLog)\
+            .filter(CollectLog.url.in_(deletedUrls))\
+            .delete(synchronize_session=False)
+        Session.commit()
+        print(f'{deletedUrls} have been deleted')
     except Exception as e:
         print(e)
     Session.close()
@@ -167,9 +175,10 @@ def collect_news_to_db(objects: List[object]):
 def get_checked_news(date):
     Session = sessionmaker(bind=engine)()
     q = Session.query(CollectLog.url)\
-            .filter(extract('year', CollectLog.checked_time) == date.year,
+        .filter(extract('year', CollectLog.checked_time) == date.year,
                 extract('month', CollectLog.checked_time) == date.month,
-                extract('day', CollectLog.checked_time) == date.day)
+                extract('day', CollectLog.checked_time) == date.day)\
+        .distinct()
     checked_news = []
     for idx, (url,) in enumerate(q):
         checked_news.append(f'{idx + 1}. {url}')
@@ -217,12 +226,12 @@ def response_message(message):
 
     return response
 
-def update_checked(Session: object, checked_urls: List[str], checked_time: datetime):
+def update_checked(Session: object, checked_urls: List[str]):
     Session.query(CollectLog)\
         .filter(CollectLog.url.in_(checked_urls))\
         .update({\
                  CollectLog.checked: True,\
-                 CollectLog.checked_time: checked_time}, synchronize_session=False)
+                 CollectLog.checked_time: datetime.now()}, synchronize_session=False)
     Session.commit()
     Session.close()
 

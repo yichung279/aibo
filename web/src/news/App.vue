@@ -10,7 +10,7 @@
         button.left.ui.button(@click='addUrl') Add url
     .ui.list.large
       .ui.label(v-for='(url, index) in addedUrls') {{ url }}
-        i.delete.icon(@click='deleteUrl(index)')
+        i.delete.icon(@click='removeAddedUrl(index)')
     button.teal.ui.button(@click='upload') Upload
     table.ui.celled.table
       thead
@@ -21,10 +21,10 @@
           th Published time
           th Poster
       tbody
-        tr(v-for="(value, index) in news", :class="{ checked: value.checked }")
+        tr(v-for="(value, index) in news", :class="{ positive: value.checked , negative: value.deleted}", @click="deleteNews($event, index)")
           td
             .ui.checkbox
-              input(type='checkbox', :disabled='value.checked', :value='value.url', v-model='checkedNews')
+              input(type='checkbox', :disabled='value.checked', :value='value.url', v-model='checkedNews', @click.stop)
               label
                 a(:href='value.url', @click.stop, target='_blank') {{ value.url }}
           td {{ value.collect_time }}
@@ -39,9 +39,12 @@
 import axios from 'axios'
 import Swal from 'sweetalert2'
 
-
 export default {
   async mounted() {
+    this.$vlf.getItem('author').then(value => {
+      if (value) this.poster = value
+    })
+
     this.getNews()
   },
 
@@ -62,40 +65,57 @@ export default {
     },
 
     async getNews(){
-      let resopnse = await axios.get('https://merry.ee.ncku.edu.tw:1092/news/30')
+      let resopnse = await axios.get('/news/30')
       const news = resopnse.data
+      this.news = []
       news.forEach((value, i) => {
         this.$set(this.news, i, value)
       })
     },
 
-    deleteUrl(index){
+    deleteNews(event, index){
+      if (this.news[index].deleted) this.deletedNews.splice(this.deletedNews.indexOf(this.news[index].url), 1)
+      else this.deletedNews.push(this.news[index].url)
+
+      this.$set(this.news[index], 'deleted', !this.news[index].deleted)
+    },
+
+    removeAddedUrl(index){
       this.addedUrls.splice(index, 1)
     },
 
     publish(){
-      axios.post('https://merry.ee.ncku.edu.tw:1092/checkedNews/', this.checkedNews)
+      axios.post('/checkedNews/', {
+        "urls": this.checkedNews,
+        "deletedUrls": this.deletedNews
+      })
       const vthis = this
 	  Swal.fire({
-		title: 'News\' have been saved',
+		position: 'top-end',
+        title: 'News\' have been saved',
 		icon: 'success',
         onAfterClose: function(){
           vthis.getNews()
+          vthis.deletedUrls = []
         }
 	  })
     },
 
     upload(){
       if(this.poster == '') this.poster = 'anonymous'
-      axios.post('https://merry.ee.ncku.edu.tw:1092/news/', {
+      axios.post('/news/', {
         "poster": this.poster,
         "urls": this.addedUrls
       })
       const vthis = this
 	  Swal.fire({
-		title: 'News\' have been saved',
+		position: 'top-end',
+        title: 'News\' have been saved',
 		icon: 'success',
         onAfterClose: function(){
+          vthis.$vlf.setItem('author', vthis.poster).catch(err => {
+            console.log(err)
+          })
           vthis.addedUrls = []
           vthis.getNews()
         }
@@ -118,13 +138,7 @@ export default {
 .inner-margin
   margin: 0.3rem
 
-/* .list */
-/*   padding: 0 2rem!important */
-
 .margin
   margin: 3rem
-
-tr.checked
-  background: #f0ffcc!important
 
 </style>
