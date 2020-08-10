@@ -20,7 +20,6 @@ class CollectLog(Base): # {{{
     checked_time = Column(DateTime)
     published = Column(Boolean)
     published_time = Column(DateTime)
-
 # }}}
 
 class ParsedNews(Base): #{{{

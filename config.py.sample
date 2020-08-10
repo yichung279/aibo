@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 
 
+# crawler config
+available_host=[available news source] # e.g. ['chinatimes, cnews, medium\.com']
+
 # db config
 db_url=[your db url] # e.g. sqlite:///aibo.db
 
@@ -15,3 +18,6 @@ cert=[your cert path]
 # line bot config
 access_token=[your access token]
 secret=[your secret code]
+
+# dev config
+origins=[CORS available host]

@@ -8,4 +8,5 @@ import scrapy
 
 class AutoNewsItem(scrapy.Item):
     # define the fields for your item here like:
-    objects = scrapy.Field()
+    collect_log_objects = scrapy.Field()
+    parsed_news_objects = scrapy.Field()

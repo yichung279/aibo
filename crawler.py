@@ -14,7 +14,7 @@ from bs4 import BeautifulSoup
 import config
 
 def parse(url):
-    pattern = '|'.join(config.availble_host)
+    pattern = '|'.join(config.available_host)
     match = re.search(rf'{pattern}', url)
     if not match:
         return None, None, None, None
@@ -41,7 +41,7 @@ def blocktempo(soup):
     return date, title, article, keywords.strip(',')
 
 def bnextcom(soup):
-    date = datetime.strptime(soup.find(class_='ctnBox').find(class_='item').text, '%Y.%m.%d')
+    date = datetime.strptime(soup.select('span.item')[0].text, '%Y.%m.%d')
     title = soup.find('h1').text
     article = soup.find(class_='htmlview').find('article').text
     keywords = ''
@@ -58,6 +58,17 @@ def buzzorange(soup):
         article += paragraph.text + period
     keywords = ''
     for tag in soup.find(class_='post-tags').find_all('a'):
+        keywords += tag.text + ','
+    return date, title, article, keywords.strip(',')
+
+def chinatimes(soup):
+    date = iso8601.parse_date(soup.find('time')['datetime'])
+    title = soup.find('h1').text
+    article = ''
+    for paragraph in soup.find(class_='article-body').find_all(['p']):
+        article += paragraph.text
+    keywords = ''
+    for tag in soup.find(class_='article-hash-tag').find_all('a'):
         keywords += tag.text + ','
     return date, title, article, keywords.strip(',')
 

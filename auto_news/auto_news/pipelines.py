@@ -13,7 +13,7 @@ from scrapy.exceptions import CloseSpider
 from sqlalchemy import MetaData, Table, create_engine, extract
 from sqlalchemy.orm import sessionmaker
 
-from model.Model import CollectLog
+from model.Model import CollectLog, ParsedNews
 
 
 class SqlitePipeline:
@@ -28,7 +28,9 @@ class SqlitePipeline:
 
     def insert_data(self, item):
         CollectLog.metadata.create_all(self.engine)
-        self.session.bulk_save_objects(item['objects'])
+        ParsedNews.metadata.create_all(self.engine)
+        self.session.bulk_save_objects(item['collect_log_objects'])
+        self.session.bulk_save_objects(item['parsed_news_objects'])
         self.session.commit()
 
     def close_spider(self, spider):

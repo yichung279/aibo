@@ -12,7 +12,7 @@ BOT_NAME = 'auto_news'
 SPIDER_MODULES = ['auto_news.spiders']
 NEWSPIDER_MODULE = 'auto_news.spiders'
 
-DB_URL = 'sqlite:///../test.db'
+DB_URL = 'sqlite:///../test2.db'
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 #USER_AGENT = 'auto_news (+http://www.yourdomain.com)'

@@ -11,8 +11,8 @@ import scrapy
 
 # local import
 from auto_news.items import AutoNewsItem
-from model.Model import CollectLog
-
+from model.Model import CollectLog, ParsedNews
+import crawler
 
 class ChinatimeSpider(scrapy.Spider):
     name = 'chinatime'
@@ -24,7 +24,8 @@ class ChinatimeSpider(scrapy.Spider):
 
     def parse(self, response):
         items = AutoNewsItem()
-        items['objects'] = []
+        items['collect_log_objects'] = []
+        items['parsed_news_objects'] = []
         data = eval(response.text)['list']
 
         if not len(data):
@@ -34,5 +35,7 @@ class ChinatimeSpider(scrapy.Spider):
             url = re.sub(r'\/money.*', f'{news["HyperLink"]}?chdtv', response.url)
             html = requests.get(url).text
             crawler_time = datetime.now()
-            items['objects'].append(CollectLog(poster='scrapy',url=url, html=html, collect_time=crawler_time))
+            date, title, article, keywords = crawler.parse(url)
+            items['collect_log_objects'].append(CollectLog(poster='scrapy',url=url, html=html, collect_time=crawler_time))
+            items['parsed_news_objects'].append(ParsedNews(url=url, title=title, article=article, keywords=keywords, date=date))
         yield items
