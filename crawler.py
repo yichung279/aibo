@@ -171,6 +171,12 @@ def newsyahoo(soup):
             keywords += a.text + ','
     return date, title, article, keywords.strip(',')
 
+def stockyahoo(soup):
+    date = iso8601.parse_date(soup.find('time')['datetime'])
+    title = soup.find('h1').text
+    article = soup.find('article').text
+    return date, title, article, None
+
 def technews(soup):
     date = re.sub(r'[\u4E00-\u9FFF\s]', '', soup.select('#main header span.body')[1].text)
     date = datetime.strptime(date, '%Y%m%d%H:%M')
@@ -203,6 +209,18 @@ def udncom(soup):
         keywords += keyword.text + ','
     return date, title, article, keywords.strip(',')
 
+def wealthcom(soup):
+    date = re.sub(r'[\u4E00-\u9FFF\s\:]', '', soup.select('.entry-header p')[0].text)
+    date = datetime.strptime(date, '%Y-%m-%d')
+    title = soup.find('h1').text
+    article = ''
+    for paragraph in soup.find(id='cms-article').find_all('p'):
+        article += paragraph.text
+    keywords = ''
+    for tag in soup.find(class_='article-tag').find_all('a'):
+        keywords += tag.text + ','
+    return date, title, article, keywords.strip(',')
+
 def wealthhket(soup):
     selects = soup.find(class_='article-details-info-container_date').find_all('span')
 
@@ -217,7 +235,7 @@ def wealthhket(soup):
 
 if '__main__' == __name__:
     url = sys.argv[1]
-    pattern = '|'.join(config.availble_host)
+    pattern = '|'.join(config.available_host)
     match = re.search(rf'{pattern}', url)
     if match:
         source = match.group()
