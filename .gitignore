@@ -4,3 +4,4 @@ config.py
 ssl
 *.db
 *.swp
+pytorch_model.bin

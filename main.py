@@ -25,6 +25,7 @@ import requests
 import uvicorn
 
 # local import
+from chat.chatbot import chatbot
 from eliza import eliza
 import config
 import crawler
@@ -253,7 +254,8 @@ def response_message(message):
         response = checked_news
     elif re.findall(r'aibo', text):
         said = text.replace('aibo', '')
-        response = eliza.respond(said)
+        response = chatbot.chat(said)
+        # response = eliza.respond(said)
         if response is None:
             response = '開發中'
 

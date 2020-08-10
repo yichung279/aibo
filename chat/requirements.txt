@@ -1,0 +1,12 @@
+urllib3
+bs4
+easydict
+lxml
+googletrans
+fake-useragent
+transformers==2.1.1
+sklearn
+tqdm
+numpy
+scipy==1.2.1
+thulac
