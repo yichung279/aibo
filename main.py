@@ -2,14 +2,12 @@
 
 
 # standard import
+from datetime import datetime
 import json
 import os
 import re
-from datetime import datetime
 
 # third-party import
-import requests
-import uvicorn
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware # for dev
 from fastapi.staticfiles import StaticFiles
@@ -18,15 +16,18 @@ from typing import List
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError, LineBotApiError
 from linebot.models import MessageEvent, TextMessage, TextSendMessage
-from model.Model import User, CollectLog
+from model.Model import User, CollectLog, ParsedNews
 from pydantic import BaseModel
-from sqlalchemy import MetaData, Table, create_engine, extract
+from sqlalchemy import and_, MetaData, Table, create_engine, extract
 from sqlalchemy.orm import sessionmaker
 from typing import List
+import requests
+import uvicorn
 
 # local import
-import config
 from eliza import eliza
+import config
+import crawler
 
 
 app = FastAPI()
@@ -78,11 +79,23 @@ async def get_ui(request: Request, api_name: str):
 @app.get("/news/{num_news}")
 def get_latest_num_news(num_news: int):
     Session = sessionmaker(bind=engine)()
-    q = Session.query(CollectLog).order_by(CollectLog.collect_time).limit(num_news)
+    q = Session.query(CollectLog, ParsedNews)\
+        .join(ParsedNews, CollectLog.url == ParsedNews.url)\
+        .filter(CollectLog.poster != 'scrapy')\
+        .order_by(CollectLog.collect_time.desc())\
+        .limit(num_news)
     latest_N_news = []
-    for instance in q:
-        instance = instance.__dict__
-        instance.pop('html', None)
+    for collect_log, parsed_news in q:
+        instance = collect_log.__dict__
+        instance.update(parsed_news.__dict__)
+
+        if not instance['title']:
+            instance['title'] = instance['url']
+        else:
+            re.sub(r'[\n\s]', '', instance['title'])
+
+        for key in ['html', 'article']:
+            instance.pop(key, None)
         latest_N_news.append(instance)
     Session.close()
     return latest_N_news
@@ -127,13 +140,22 @@ async def check(urls: List[str]):
 
 @app.post("/news/")
 async def collect(news: News):
-    objects = []
+    collect_log_objects = []
+    parsed_news_objects = []
     try:
         for url in news.urls:
             html = requests.get(url).text
+            date, title, article, keywords = crawler.parse(url)
             collect_time = datetime.now()
-            objects.append(CollectLog(poster=news.poster, url=url, html=html, collect_time=collect_time))
-        collect_news_to_db(objects)
+            collect_log_objects.append(CollectLog(poster=news.poster,
+                                                  url=url, html=html,
+                                                  collect_time=collect_time))
+            parsed_news_objects.append(ParsedNews(url=url,
+                                                  title=title,
+                                                  article=article,
+                                                  keywords=keywords,
+                                                  date=date))
+        collect_news_to_db(collect_log_objects, parsed_news_objects)
         print(f'{news.urls} collected')
     except Exception as e:
         print(e)
@@ -157,6 +179,9 @@ async def delete_news(urls: List[str]):
         Session.query(CollectLog)\
             .filter(CollectLog.url.in_(urls))\
             .delete(synchronize_session=False)
+        Session.query(ParsedNews)\
+            .filter(ParsedNews.url.in_(urls))\
+            .delete(synchronize_session=False)
         Session.commit()
         print(f'{urls} have been deleted')
     except Exception as e:
@@ -171,10 +196,12 @@ def handle_message(event):
     if response:
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text=response))
 
-def collect_news_to_db(objects: List[object]):
+def collect_news_to_db(collect_log_objects: List[object], parsed_news_objects: List[object]):
     Session = sessionmaker(bind=engine)()
     CollectLog.metadata.create_all(engine)
-    Session.bulk_save_objects(objects)
+    ParsedNews.metadata.create_all(engine)
+    Session.bulk_save_objects(collect_log_objects)
+    Session.bulk_save_objects(parsed_news_objects)
     Session.commit()
     Session.close()
 

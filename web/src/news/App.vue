@@ -16,18 +16,18 @@
     table.ui.celled.table
       thead
         tr
-          th URL
+          th Title
           th Collected time
           th Checked time
           th Published time
-          th Poster
+          th Collector
       tbody
         tr(v-for="(value, index) in news", :class="{ positive: value.checked }")
           td
             .ui.checkbox
               input(type='checkbox', :value='value.url', v-model='selectedNews', @click.stop, :disabled='!auditor')
               label
-                a(:href='value.url', @click.stop, target='_blank') {{ value.url }}
+                a(:href='value.url', @click.stop, target='_blank') {{ value.title }}
           td {{ value.collect_time }}
           td {{ value.checked_time }}
           td {{ value.published_time }}

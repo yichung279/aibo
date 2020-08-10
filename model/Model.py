@@ -23,6 +23,17 @@ class CollectLog(Base): # {{{
 
 # }}}
 
+class ParsedNews(Base): #{{{
+    __tablename__ = 'parsed_news'
+
+    _id = Column(Integer, primary_key=True)
+    url = Column(Text, unique=True)
+    title = Column(Text)
+    article = Column(Text)
+    keywords = Column(Text)
+    date = Column(DateTime)
+# }}}
+
 class User(Base): #{{{
     __tablename__ = 'user'
 
