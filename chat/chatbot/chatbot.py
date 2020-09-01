@@ -5,11 +5,10 @@ import sys
 from datetime import datetime
 from os.path import join
 
-from answerer import answerer
 from chat.chatbot import config as chat_config
-# from chatter.chatter import Chatter
+from chat.chatbot.answerer import answerer
 
-sys.path.append('./chat/chatbot/')
+# from chat.chatbot.chatter.chatter import Chatter
 
 
 def logging_setting():
@@ -19,53 +18,36 @@ def logging_setting():
         logging.basicConfig(level=logging.WARNING)
 
 
-def get_question(text):
+def get_question_key(text):
     '''
     Description:
             Try to get question keyword from text(rule-based).
 
     '''
-    explain = ['知道', '理解', '解釋', '了解', '瞭解']
-    base_q = ['什麼', '甚麼', '誰', '啥']
-    q_end = ['阿?', '阿', '啊?', '啊', '嗎?', '嗎', '?']
+    explain = ['知道', '理解', '解釋', '了解', '瞭解', '告訴我', '跟我說', '懂', '懂不懂']
+    base_q = ['什麼', '甚麼', '誰', '啥', '的意思']
+    q_end = ['?', '阿', '啊', '嗎', '呢', '？']
 
     text = text.replace('是', '')
     for _end in q_end:
         text = text.replace(_end, '')
 
     # print(text)
-    ex_pattern = '|'.join(explain)
-    bq_pattern = '|'.join(base_q)
+    explain_pattern = '|'.join(explain)
+    base_q_pattern = '|'.join(base_q)
 
-    # ex bq Q
-    pattern = '.*(%s)(%s)(.+)' % (ex_pattern, bq_pattern)
-    m = re.match(pattern, text)
-    if m and m.group(3) != '':
-        return m.group(3)
+    patterns = [
+        (f'.*({explain_pattern})({base_q_pattern})(.+)', 3),
+        (f'.*({explain_pattern})(.+)({base_q_pattern})', 2),
+        (f'.*({base_q_pattern})(.+)', 2),
+        (f'(.+)({base_q_pattern})', 1),
+        (f'.*({explain_pattern})(.+)', 2),
+    ]
 
-    # ex Q bq
-    pattern = '.*(%s)(.+)(%s)' % (ex_pattern, bq_pattern)
-    m = re.match(pattern, text)
-    if m and m.group(2) != '':
-        return m.group(2)
-
-    # bq Q
-    pattern = '.*(%s)(.+)' % (bq_pattern)
-    m = re.match(pattern, text)
-    if m and m.group(2) != '':
-        return m.group(2)
-
-    # Q bq
-    pattern = '(.+)(%s)' % (bq_pattern)
-    m = re.match(pattern, text)
-    if m and m.group(1) != '':
-        return m.group(1)
-
-    # ex Q
-    pattern = '.*(%s)(.+)' % (ex_pattern)
-    m = re.match(pattern, text)
-    if m and m.group(2) != '':
-        return m.group(2)
+    for pattern in patterns:
+        m = re.match(pattern[0], text)
+        if m and m.group(pattern[1]) != '':
+            return m.group(pattern[1])
 
     return None
 
@@ -99,13 +81,13 @@ class ChatBot():
         self._write_chatlog('user: ' + text)
 
         # 獲取問題關鍵字
-        question = get_question(text)
-        print('question: '+question)
+        question_key = get_question_key(text)
+        # print(f'question_key: {question_key}')
         response = None
 
         # 若有得到問題的關鍵字則丟去answerer回答
-        if question is not None:
-            response = answerer.response(question)
+        if question_key is not None:
+            response = answerer.response(question_key)
 
         # if response:
         #     logging.info('answerer: ' + response)
